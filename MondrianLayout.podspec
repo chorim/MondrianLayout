@@ -20,5 +20,5 @@ Pod::Spec.new do |spec|
   spec.source_files = "MondrianLayout/**/*.swift"
   spec.framework = "UIKit"
   spec.requires_arc = true
-  spec.swift_versions = ["5.3", "5.4", "5.5"]
+  spec.swift_versions = ["5.3", "5.4", "5.5", "5.6"]
 end

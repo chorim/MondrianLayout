@@ -8,6 +8,8 @@ let book = Book(title: "MondrianLayout") {
 
   _book_mondrian
 
+  _book_sizing
+
   _book_background
 
   _book_overlay
@@ -18,6 +20,8 @@ let book = Book(title: "MondrianLayout") {
 
   _book_ZStackConstraint
 
+  _book_VGridConstraint
+
   _book_RelativeBlock
 
   _book_SafeArea
@@ -25,6 +29,8 @@ let book = Book(title: "MondrianLayout") {
   _book_ViewController
 
   _book_classic
+
+  _book_layoutManager
 
   BookNavigationLink(title: "Instagram Post") {
     BookPreview {

@@ -35,10 +35,16 @@ public struct BackgroundBlock:
     setupBackground: do {
 
       switch backgroundContent {
+      case .layoutGuide(let block):
+
+        context.register(layoutGuideBlock: block)
+        context.add(
+          constraints: block.makeConstraintsToEdge(parent)
+        )
 
       case .view(let c):
 
-        context.register(viewConstraint: c)
+        context.register(viewBlock: c)
         context.add(
           constraints: c.makeConstraintsToEdge(parent)
         )
@@ -48,7 +54,8 @@ public struct BackgroundBlock:
         .hStack(let c as _LayoutBlockType),
         .zStack(let c as _LayoutBlockType),
         .overlay(let c as _LayoutBlockType),
-        .background(let c as _LayoutBlockType):
+        .background(let c as _LayoutBlockType),
+        .vGrid(let c as _LayoutBlockType):
 
         let backgroundLayoutGuide = context.makeLayoutGuide(identifier: "Background")
 
@@ -68,8 +75,15 @@ public struct BackgroundBlock:
     setupContent: do {
 
       switch content {
+      case .layoutGuide(let block):
+
+        context.register(layoutGuideBlock: block)
+        context.add(
+          constraints: block.makeConstraintsToEdge(parent)
+        )
+
       case .view(let c):
-        context.register(viewConstraint: c)
+        context.register(viewBlock: c)
         context.add(
           constraints: c.makeConstraintsToEdge(parent)
         )
@@ -78,7 +92,8 @@ public struct BackgroundBlock:
         .hStack(let c as _LayoutBlockType),
         .zStack(let c as _LayoutBlockType),
         .overlay(let c as _LayoutBlockType),
-        .background(let c as _LayoutBlockType):
+        .background(let c as _LayoutBlockType),
+        .vGrid(let c as _LayoutBlockType):
         c.setupConstraints(parent: parent, in: context)
       }
     }

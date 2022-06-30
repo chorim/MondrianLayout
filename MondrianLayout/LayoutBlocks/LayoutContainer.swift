@@ -7,17 +7,20 @@ public enum LayoutContainerBoundary<Anchor: Equatable>: Equatable {
 
 /**
  [MondrianLayout]
- A descriptor that makes a layout guide that attaches to safe area each edge.
+ A representation that describes a container for laying out subviews.
  */
 public struct LayoutContainer {
 
-  let top: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>
-  let leading: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>
-  let bottom: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>
-  let trailing: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>
+  private let top: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>
+  private let leading: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>
+  private let bottom: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>
+  private let trailing: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>
 
-  let content: _LayoutBlockNode
+  private let content: _LayoutBlockNode
 
+  /**
+   Attaching to safeArea specified edges
+   */
   public init<Block: _LayoutBlockNodeConvertible>(
     attachedSafeAreaEdges: Edge.Set,
     content: () -> Block
@@ -33,6 +36,11 @@ public struct LayoutContainer {
 
   }
 
+  /**
+   Attaching to edge specified anchor of layout guide or view.
+
+   It helps to lay out views outside of safe area.
+   */
   public init<Block: _LayoutBlockNodeConvertible>(
     top: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>,
     leading: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>,
@@ -49,7 +57,11 @@ public struct LayoutContainer {
     self.content = content()._layoutBlockNode
   }
 
+  /**
+   Internal method
+   */
   func setupConstraints(parent: UIView, in context: LayoutBuilderContext) {
+
     func prepareLayoutContainer() -> _LayoutElement {
 
       if top == .view(.top), leading == .view(.leading), bottom == .view(.bottom),
@@ -135,21 +147,49 @@ public struct LayoutContainer {
     }
 
     switch content {
-    case .view(let c):
+    case .layoutGuide(let block):
 
-      context.register(viewConstraint: c)
-      context.add(constraints: c.makeConstraintsToEdge(prepareLayoutContainer()))
+      context.register(layoutGuideBlock: block)
+      context.add(constraints: block.makeConstraintsToEdge(prepareLayoutContainer()))
+
+    case .view(let block):
+
+      context.register(viewBlock: block)
+      context.add(constraints: block.makeConstraintsToEdge(prepareLayoutContainer()))
 
     case .vStack(let c as _LayoutBlockType),
       .hStack(let c as _LayoutBlockType),
       .zStack(let c as _LayoutBlockType),
       .overlay(let c as _LayoutBlockType),
       .relative(let c as _LayoutBlockType),
-      .background(let c as _LayoutBlockType):
+      .background(let c as _LayoutBlockType),
+      .vGrid(let c as _LayoutBlockType):
 
       c.setupConstraints(parent: prepareLayoutContainer(), in: context)
 
     }
 
+  }
+}
+
+extension _LayoutBlockType {
+
+  /**
+   Converts to ``LayoutContainer`` wrapping this block.
+   */
+  public func container(respectingSafeAreaEdges edges: Edge.Set) -> LayoutContainer {
+    return .init(attachedSafeAreaEdges: edges, content: { self })
+  }
+
+  /**
+   Converts to ``LayoutContainer`` wrapping this block.
+   */
+  public func container(
+    top: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>,
+    leading: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>,
+    bottom: LayoutContainerBoundary<_LayoutElement.YAxisAnchor>,
+    trailing: LayoutContainerBoundary<_LayoutElement.XAxisAnchor>
+  ) -> LayoutContainer {
+    return .init(top: top, leading: leading, bottom: bottom, trailing: trailing, content: { self })
   }
 }

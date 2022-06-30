@@ -1,37 +1,36 @@
 import UIKit
 
-/**
- [MondrianLayout]
- A block that overlays its children, aligning them in both axes as default behavior.
-
- Examples:
-
- **Put a view snapping to edge**
-
- ```swift
- self.mondrian.buildSubviews {
-   ZStackBlock {
-     backgroundView.viewBlock.relative(0)
-   }
- }
- ```
-
- synonyms:
-
- ```swift
- ZStackBlock(alignment: .attach(.all)) {
-   backgroundView
- }
- ```
-
- ```swift
- ZStackBlock {
-   backgroundView.viewBlock.alignSelf(.attach(.all))
- }
- ```
- */
+/// [MondrianLayout]
+/// A block that overlays its children, aligning them in both axes as default behavior.
+///
+/// Examples:
+///
+/// **Put a view snapping to edge**
+///
+/// ```swift
+/// Mondrian.buildSubviews(on: self) {
+///   ZStackBlock {
+///     backgroundView.viewBlock.relative(0)
+///   }
+/// }
+/// ```
+///
+/// synonyms:
+///
+/// ```swift
+/// ZStackBlock(alignment: .attach(.all)) {
+///   backgroundView
+/// }
+/// ```
+///
+/// ```swift
+/// ZStackBlock {
+///   backgroundView.viewBlock.alignSelf(.attach(.all))
+/// }
+/// ```
 public struct ZStackBlock:
-  _LayoutBlockType
+  _LayoutBlockType,
+  _DimensionConstraintType
 {
 
   // MARK: - Properties
@@ -45,11 +44,13 @@ public struct ZStackBlock:
     case attach(Edge.Set)
   }
 
-  public var name: String = "ZStack"
-
   public var _layoutBlockNode: _LayoutBlockNode {
     return .zStack(self)
   }
+
+  public var name: String = "ZStack"
+
+  public var dimensionConstraints: DimensionDescriptor = .init()
 
   public let alignment: XYAxisAlignment
   public let elements: [ZStackContentBuilder.Component]
@@ -68,13 +69,13 @@ public struct ZStackBlock:
 
   public func setupConstraints(parent: _LayoutElement, in context: LayoutBuilderContext) {
 
+    context.add(constraints: dimensionConstraints.makeConstraints(for: parent))
+
     elements.forEach { element in
 
       func perform(current: _LayoutElement, alignment: XYAxisAlignment) {
 
-        var constraints: [NSLayoutConstraint]
-
-        constraints = [
+        let baseConstraints: [NSLayoutConstraint] = [
           current.leftAnchor.constraint(greaterThanOrEqualTo: parent.leftAnchor)
             .setInternalIdentifier("ZStack.left"),
           current.topAnchor.constraint(greaterThanOrEqualTo: parent.topAnchor)
@@ -93,6 +94,8 @@ public struct ZStackBlock:
           )
           .setInternalIdentifier("ZStack.height"),
         ]
+
+        var constraints: [NSLayoutConstraint] = []
 
         switch alignment {
         case .center:
@@ -165,13 +168,23 @@ public struct ZStackBlock:
           }
         }
 
-        context.add(constraints: constraints)
+        context.add(constraints: baseConstraints + constraints)
       }
 
       switch element.node {
+
+      case .layoutGuide(let block):
+
+        context.register(layoutGuideBlock: block)
+
+        perform(
+          current: .init(layoutGuide: block.layoutGuide),
+          alignment: element.alignSelf ?? alignment
+        )
+
       case .view(let viewConstraint):
 
-        context.register(viewConstraint: viewConstraint)
+        context.register(viewBlock: viewConstraint)
 
         perform(
           current: .init(view: viewConstraint.view),
@@ -185,7 +198,8 @@ public struct ZStackBlock:
       case .background(let c as _LayoutBlockType),
         .overlay(let c as _LayoutBlockType),
         .vStack(let c as _LayoutBlockType),
-        .hStack(let c as _LayoutBlockType):
+        .hStack(let c as _LayoutBlockType),
+        .vGrid(let c as _LayoutBlockType):
 
         let newLayoutGuide = context.makeLayoutGuide(identifier: "ZStackBlock.\(c.name)")
         c.setupConstraints(parent: .init(layoutGuide: newLayoutGuide), in: context)
@@ -230,8 +244,41 @@ public struct _ZStackItem: _ZStackItemConvertible {
 public enum ZStackContentBuilder {
   public typealias Component = _ZStackItem
 
+  public static func buildBlock() -> [Component] {
+    return []
+  }
+
   public static func buildBlock(_ nestedComponents: [Component]...) -> [Component] {
     return nestedComponents.flatMap { $0 }
+  }
+
+  public static func buildOptional(_ component: [Component]?) -> [Component] {
+    return component ?? []
+  }
+
+  public static func buildEither(first component: [Component]) -> [Component] {
+    return component
+  }
+
+  public static func buildEither(second component: [Component]) -> [Component] {
+    return component
+  }
+
+  public static func buildExpression(_ layoutGuides: [UILayoutGuide]...) -> [Component] {
+    return layoutGuides.flatMap { $0 }.map {
+      .init(node: .layoutGuide(.init($0)))
+    }
+  }
+
+  public static func buildExpression<LayoutGuide: UILayoutGuide>(_ layoutGuide: LayoutGuide) -> [Component] {
+    return [
+      .init(node: .layoutGuide(.init(layoutGuide)))
+    ]
+  }
+
+  public static func buildExpression<LayoutGuide: UILayoutGuide>(_ layoutGuide: LayoutGuide?) -> [Component] {
+    guard let view = layoutGuide else { return [] }
+    return buildExpression(view)
   }
 
   public static func buildExpression(_ views: [UIView]...) -> [Component] {
@@ -245,7 +292,7 @@ public enum ZStackContentBuilder {
       .init(node: .view(.init(view)))
     ]
   }
-  
+
   public static func buildExpression<View: UIView>(_ view: View?) -> [Component] {
     guard let view = view else { return [] }
     return buildExpression(view)

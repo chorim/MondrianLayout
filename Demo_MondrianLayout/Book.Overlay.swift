@@ -7,7 +7,31 @@ var _book_overlay: BookView {
 
     BookPreview {
       ExampleView(width: nil, height: nil) { (view: UIView) in
-        view.mondrian.buildSubviews {
+
+        Mondrian.buildSubviews(on: view) {
+          UIView.mock(
+            backgroundColor: .mondrianYellow,
+            preferredSize: .init(width: 100, height: 100)
+          )
+            .viewBlock
+            .overlay(
+              UIView.mock(backgroundColor: .layeringColor)
+                .viewBlock
+                .overlay(
+                  UIView.mock(backgroundColor: .layeringColor)
+                    .viewBlock
+                    .padding(10)
+                )
+                .padding(10)
+            )
+        }
+      }
+    }
+
+
+    BookPreview {
+      ExampleView(width: nil, height: nil) { (view: UIView) in
+        Mondrian.buildSubviews(on: view) {
           UIView.mock(
             backgroundColor: .mondrianYellow,
             preferredSize: .init(width: 100, height: 100)
@@ -29,7 +53,7 @@ var _book_overlay: BookView {
 
     BookPreview {
       ExampleView(width: nil, height: nil) { (view: UIView) in
-        view.mondrian.buildSubviews {
+        Mondrian.buildSubviews(on: view) {
           VStackBlock {
             UIView.mock(
               backgroundColor: .mondrianYellow,
@@ -52,7 +76,7 @@ var _book_overlay: BookView {
 
     BookPreview {
       ExampleView(width: nil, height: nil) { (view: UIView) in
-        view.mondrian.buildSubviews {
+        Mondrian.buildSubviews(on: view) {
           VStackBlock(spacing: 2) {
             UIView.mock(
               backgroundColor: .mondrianYellow,
@@ -91,7 +115,7 @@ var _book_overlay: BookView {
 
     BookPreview {
       ExampleView(width: nil, height: nil) { (view: UIView) in
-        view.mondrian.buildSubviews {
+        Mondrian.buildSubviews(on: view) {
           VStackBlock {
             UIView.mock(
               backgroundColor: .mondrianYellow,

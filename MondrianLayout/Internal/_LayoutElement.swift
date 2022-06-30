@@ -20,6 +20,9 @@ extension UILayoutGuide: __LayoutElementConvertible {
   }
 }
 
+/**
+ Abstraction of element that can be laied out by layout anchors.
+ */
 public struct _LayoutElement: __LayoutElementConvertible {
 
   public enum XAxisAnchor: Equatable {
@@ -28,6 +31,11 @@ public struct _LayoutElement: __LayoutElementConvertible {
     case leading
     case trailing
     case centerX
+  }
+
+  public enum DimensionAnchor: Equatable {
+    case width
+    case height
   }
 
   public enum YAxisAnchor: Equatable {
@@ -116,6 +124,15 @@ public struct _LayoutElement: __LayoutElementConvertible {
       return bottomAnchor
     case .centerY:
       return centerYAnchor
+    }
+  }
+
+  func anchor(_ type: DimensionAnchor) -> NSLayoutDimension {
+    switch type {
+    case .width:
+      return widthAnchor
+    case .height:
+      return heightAnchor
     }
   }
 }

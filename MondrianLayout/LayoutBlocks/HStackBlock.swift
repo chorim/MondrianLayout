@@ -3,14 +3,16 @@ import UIKit
 /// [MondrianLayout]
 ///
 /// A descriptor that lays out the contents horizontally.
+/// spacing: `0`
+/// alignment: `.center`
 public struct HStackBlock:
   _LayoutBlockType,
-  _LayoutBlockNodeConvertible
+  _DimensionConstraintType
 {
 
   /// Alignment option for ``HStackBlock``
   public enum YAxisAlignment {
-    
+
     /// In ``HStackBlock``
     case top
 
@@ -26,11 +28,13 @@ public struct HStackBlock:
 
   // MARK: - Properties
 
-  public var name: String = "HStack"
-
   public var _layoutBlockNode: _LayoutBlockNode {
     return .hStack(self)
   }
+
+  public var name: String = "HStack"
+
+  public var dimensionConstraints: DimensionDescriptor = .init()
 
   public var spacing: CGFloat
   public var alignment: YAxisAlignment
@@ -51,6 +55,8 @@ public struct HStackBlock:
   // MARK: - Functions
 
   public func setupConstraints(parent: _LayoutElement, in context: LayoutBuilderContext) {
+
+    context.add(constraints: dimensionConstraints.makeConstraints(for: parent))
 
     guard elements.isEmpty == false else {
       return
@@ -125,24 +131,32 @@ public struct HStackBlock:
       switch element {
       case .content(let content):
         switch content.node {
-        case .view(let viewConstraint):
+        case .layoutGuide(let block):
 
-          let view = viewConstraint.view
-          context.register(viewConstraint: viewConstraint)
-          boxes.append(.init(view: view))
+          context.register(layoutGuideBlock: block)
+          boxes.append(.init(layoutGuide: block.layoutGuide))
 
-          align(layoutElement: .init(view: view), alignment: content.alignSelf ?? alignment)
+          align(layoutElement: .init(layoutGuide: block.layoutGuide), alignment: content.alignSelf ?? alignment)
           appendSpacingIfNeeded()
 
-        case .background(let c as _LayoutBlockType),
-          .overlay(let c as _LayoutBlockType),
-          .relative(let c as _LayoutBlockType),
-          .vStack(let c as _LayoutBlockType),
-          .hStack(let c as _LayoutBlockType),
-          .zStack(let c as _LayoutBlockType):
+        case .view(let block):
 
-          let newLayoutGuide = context.makeLayoutGuide(identifier: "HStackBlock.\(c.name)")
-          c.setupConstraints(parent: .init(layoutGuide: newLayoutGuide), in: context)
+          context.register(viewBlock: block)
+          boxes.append(.init(view: block.view))
+
+          align(layoutElement: .init(view: block.view), alignment: content.alignSelf ?? alignment)
+          appendSpacingIfNeeded()
+
+        case .background(let block as _LayoutBlockType),
+          .overlay(let block as _LayoutBlockType),
+          .relative(let block as _LayoutBlockType),
+          .vStack(let block as _LayoutBlockType),
+          .hStack(let block as _LayoutBlockType),
+          .zStack(let block as _LayoutBlockType),
+          .vGrid(let block as _LayoutBlockType):
+
+          let newLayoutGuide = context.makeLayoutGuide(identifier: "HStackBlock.\(block.name)")
+          block.setupConstraints(parent: .init(layoutGuide: newLayoutGuide), in: context)
           boxes.append(.init(layoutGuide: newLayoutGuide))
 
           align(

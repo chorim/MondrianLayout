@@ -10,6 +10,7 @@ public final class LayoutBuilderContext {
 
   public weak var targetView: UIView?
   public let name: String?
+  public private(set) var isActive = false
 
   public init(
     name: String? = nil,
@@ -19,9 +20,10 @@ public final class LayoutBuilderContext {
     self.targetView = targetView
   }
 
-  public private(set) var layoutGuides: [UILayoutGuide] = []
+  public private(set) var managedLayoutGuides: [UILayoutGuide] = []
   public private(set) var constraints: [NSLayoutConstraint] = []
-  public private(set) var views: [ViewBlock] = []
+  public private(set) var viewBlocks: [ViewBlock] = []
+  public private(set) var unmanagedLayoutGuides: [LayoutGuideBlock] = []
   public private(set) var viewAppliers: [() -> Void] = []
 
   func add(constraints: [NSLayoutConstraint]) {
@@ -37,16 +39,21 @@ public final class LayoutBuilderContext {
       guide.identifier = identifier
     }
 
-    layoutGuides.append(guide)
+    managedLayoutGuides.append(guide)
     return guide
   }
 
-  func register(viewConstraint: ViewBlock) {
-    assert(views.contains(where: { $0.view == viewConstraint.view }) == false)
+  func register(viewBlock: ViewBlock) {
+    assert(viewBlocks.contains(where: { $0.view == viewBlock.view }) == false)
 
-    views.append(viewConstraint)
-    constraints.append(contentsOf: viewConstraint.makeConstraints())
-    viewAppliers.append(viewConstraint.makeApplier())
+    viewBlocks.append(viewBlock)
+    constraints.append(contentsOf: viewBlock.makeConstraints())
+    viewAppliers.append(viewBlock.makeApplier())
+  }
+
+  func register(layoutGuideBlock: LayoutGuideBlock) {
+    unmanagedLayoutGuides.append(layoutGuideBlock)
+    constraints.append(contentsOf: layoutGuideBlock.makeConstraints())
   }
 
   /// Add including views to the target view.
@@ -56,7 +63,7 @@ public final class LayoutBuilderContext {
       return
     }
 
-    views.forEach {
+    viewBlocks.forEach {
       $0.view.translatesAutoresizingMaskIntoConstraints = false
       targetView.addSubview($0.view)
     }
@@ -67,14 +74,26 @@ public final class LayoutBuilderContext {
    */
   public func activate() {
 
+    assert(Thread.isMainThread)
+
     guard let targetView = targetView else {
       return
     }
 
+    guard isActive == false else {
+      return
+    }
+
+    isActive = true
+
     viewAppliers.forEach { $0() }
 
-    layoutGuides.forEach {
+    managedLayoutGuides.forEach {
       targetView.addLayoutGuide($0)
+    }
+
+    unmanagedLayoutGuides.forEach {
+      targetView.addLayoutGuide($0.layoutGuide)
     }
 
     NSLayoutConstraint.activate(constraints)
@@ -90,8 +109,18 @@ public final class LayoutBuilderContext {
       return
     }
 
-    layoutGuides.forEach {
+    guard isActive == true else {
+      return
+    }
+
+    isActive = false
+
+    managedLayoutGuides.forEach {
       targetView.removeLayoutGuide($0)
+    }
+
+    unmanagedLayoutGuides.forEach {
+      targetView.removeLayoutGuide($0.layoutGuide)
     }
 
     NSLayoutConstraint.deactivate(constraints)

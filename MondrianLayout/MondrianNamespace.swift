@@ -9,18 +9,52 @@ public struct MondrianNamespace<Base> {
   }
 }
 
-extension UIView {
+extension MondrianNamespace where Base: UIView {
 
-  public var mondrian: MondrianNamespace<UIView> {
-    return .init(base: self)
+  /**
+   Entry point to describe layout constraints
+   Activates by calling `activate()` or using `mondrianBatchLayout`
+
+   ```swift
+   view.mondrian.layout
+   .top(.toSuperview)
+   .left(.toSuperview)
+   .right(.to(box2).left)
+   .bottom(.to(box2).bottom)
+   .activate()
+   ```
+   */
+  public var layout: LayoutDescriptor {
+    .init(view: base)
   }
+//
+//  public var block: ViewBlock {
+//    .init(base)
+//  }
 
 }
 
-extension UILayoutGuide {
+extension MondrianNamespace where Base: UILayoutGuide {
 
-  public var mondrian: MondrianNamespace<UILayoutGuide> {
-    return .init(base: self)
+  /**
+   Entry point to describe layout constraints
+   Activates by calling `activate()` or using `mondrianBatchLayout`
+
+   ```swift
+   view.mondrian.layout
+   .top(.toSuperview)
+   .left(.toSuperview)
+   .right(.to(box2).left)
+   .bottom(.to(box2).bottom)
+   .activate()
+   ```
+   */
+  public var layout: LayoutDescriptor {
+    .init(layoutGuide: base)
   }
+//
+//  public var block: LayoutGuideBlock {
+//    .init(base)
+//  }
 
 }

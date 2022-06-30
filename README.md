@@ -1,15 +1,12 @@
-# MondrianLayout - describing structured layout for AutoLayout
-
-> 🤵🏻‍♂️💭
-> We guess we still don't cover the all of use-cases.
-> Please feel free to ask what you've faced case in Issues!
+# MondrianLayout
+## A way to build AutoLayout rapidly than using InterfaceBuilder(XIB, Storyboard) in iOS.
 
 **Describing the layout ergonomically in the code**
 
-**Structured Layout API (DSL)**
+🏗 **Structured Layout API**
 
 ```swift
-view.mondrian.buildSubviews {
+Mondrian.buildSubviews(on: view) {
   VStackBlock {
   
     titleLabel
@@ -25,7 +22,7 @@ view.mondrian.buildSubviews {
 
 ---
 
-**To keep flexibility of AutoLayout, we have classical style API**
+💃 **To preserve flexibility of AutoLayout, we have classical style API**
 
 **Classical Layout API**
 ```swift
@@ -38,6 +35,15 @@ sendButton.mondrian.layout
 ```
 
 ---
+
+## Support the project
+<a href="https://www.buymeacoffee.com/muukii">
+<img width="545" alt="yellow-button" src="https://user-images.githubusercontent.com/1888355/146226808-eb2e9ee0-c6bd-44a2-a330-3bbc8a6244cf.png">
+</a>
+
+> 🤵🏻‍♂️💭
+> We guess we still don't cover the all of use-cases.
+> Please feel free to ask what you've faced case in Issues!
 
 <img width="246" alt="CleanShot 2021-06-17 at 21 12 03@2x" src="https://user-images.githubusercontent.com/1888355/122394225-b1da4e80-cfb0-11eb-9e62-f5627c817b66.png">
 
@@ -234,7 +240,7 @@ class MyView: UIView {
     super.init(frame: .zero)
     
     // Seting up constraints constraints, layoutGuides and adding subviews
-    mondrian.buildSubviews {
+    Mondrian.buildSubviews(on: self) {
       VStackBlock {
         nameLabel
         detailLabel
@@ -242,8 +248,8 @@ class MyView: UIView {
     }
     
     // Seting up constraints for the view itself.
-    mondrian.buildSelfSizing {
-      $0.width(200).maxHeight(...)... // can be method cain.
+    Mondrian.layout {
+      self.mondrian.layout.width(200) // can be method cain.
     }
     
   }
@@ -260,7 +266,7 @@ You can replace it with `UIViewController.view`.
 Attaching to top and bottom safe-area.
 
 ```swift
-self.mondrian.buildSubviews {
+Mondrian.buildSubviews(on: self) {
   LayoutContainer(attachedSafeAreaEdges: .vertical) {
     VStackBlock {
       ...
@@ -269,10 +275,21 @@ self.mondrian.buildSubviews {
 }
 ```
 
+or
+
+```swift
+Mondrian.buildSubviews(on: self) {
+  VStackBlock {
+    ...
+  }
+  .container(respectingSafeAreaEdges: .vertical)
+}
+```
+
 #### Put a view snapping to edge
 
 ```swift
-self.mondrian.buildSubviews {
+Mondrian.buildSubviews(on: self) {
   ZStackBlock {
     backgroundView.viewBlock.relative(0)    
   }
@@ -293,13 +310,17 @@ ZStackBlock {
 }
 ```
 
-#### Add constraints to view itself
+#### Add constraints to view itself - using classic layout
 
 ```swift
-self.mondrian.buildSelfSizing {
-  $0.width(...)
-    .height(...)          
+Mondrian.layout {
+  self.mondrian.layout.width(...).height(...)
 }
+```
+
+or
+```swift
+self.mondrian.layout.width(...).height(...).activate()
 ```
 
 #### Stacking views on Z axis
@@ -307,7 +328,7 @@ self.mondrian.buildSelfSizing {
 `relative(0)` fills to the edges of `ZStackBlock`.
 
 ```swift
-self.mondrian.buildSubviews {
+Mondrian.buildSubviews(on: self) {
   ZStackBlock {
     profileImageView.viewBlock.relative(0)
     textOverlayView.viewBlock.relative(0)
@@ -351,7 +372,7 @@ Alignment
 |<img width="358" alt="CleanShot 2021-06-17 at 00 09 43@2x" src="https://user-images.githubusercontent.com/1888355/122245037-5486c480-cf00-11eb-872a-e98cfce7262e.png">|<img width="359" alt="CleanShot 2021-06-17 at 00 09 51@2x" src="https://user-images.githubusercontent.com/1888355/122245054-58b2e200-cf00-11eb-9691-607a75060f75.png">|<img width="362" alt="CleanShot 2021-06-17 at 00 09 59@2x" src="https://user-images.githubusercontent.com/1888355/122245073-5d779600-cf00-11eb-856d-0e48712377d7.png">|<img width="355" alt="CleanShot 2021-06-17 at 00 10 06@2x" src="https://user-images.githubusercontent.com/1888355/122245096-62d4e080-cf00-11eb-99f2-2969a3ccc350.png">|
 
 ```swift
-self.mondrian.buildSubviews {
+Mondrian.buildSubviews(on: self) {
   VStackBlock(spacing: 4, alignment: alignment) {
     UILabel.mockMultiline(text: "Hello", textColor: .white)
       .viewBlock
@@ -368,6 +389,10 @@ self.mondrian.buildSubviews {
   }
 }
 ```
+
+#### StackingSpacer
+
+Adds a space in stacking layout block.
 
 #### Background modifier
 
@@ -458,6 +483,15 @@ ZStackBlock {
 }
 ```
 
+
+
+
+
+## Updating layout dynamically
+
+`LayoutManager` does support it.  
+If we need to change the layout each some conditions such as depending traits, this object helps that.
+
 ## Animations
 
 // TODO: 
@@ -485,7 +519,7 @@ Batch layout**
 
 ```swift
 // returns `ConstraintGroup`
-mondrianBatchLayout {
+Mondrian.layout {
 
   box1.mondrian.layout
     .top(.toSuperview)

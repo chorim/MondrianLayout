@@ -36,17 +36,23 @@ public struct OverlayBlock:
     setupContent: do {
 
       switch content {
-      case .view(let c):
-        context.register(viewConstraint: c)
+      case .layoutGuide(let block):
+        context.register(layoutGuideBlock: block)
         context.add(
-          constraints: c.makeConstraintsToEdge(parent)
+          constraints: block.makeConstraintsToEdge(parent)
+        )
+      case .view(let block):
+        context.register(viewBlock: block)
+        context.add(
+          constraints: block.makeConstraintsToEdge(parent)
         )
       case .relative(let c as _LayoutBlockType),
            .vStack(let c as _LayoutBlockType),
            .hStack(let c as _LayoutBlockType),
            .zStack(let c as _LayoutBlockType),
            .overlay(let c as _LayoutBlockType),
-           .background(let c as _LayoutBlockType):
+           .background(let c as _LayoutBlockType),
+           .vGrid(let c as _LayoutBlockType):
         c.setupConstraints(parent: parent, in: context)
       }
     }
@@ -54,13 +60,17 @@ public struct OverlayBlock:
     setupOverlay: do {
 
       switch overlayContent {
+      case .layoutGuide(let block):
+        context.register(layoutGuideBlock: block)
+        context.add(
+          constraints: block.makeConstraintsToEdge(parent)
+        )
+      case .view(let block):
 
-      case .view(let c):
-
-        context.register(viewConstraint: c)
+        context.register(viewBlock: block)
 
         context.add(
-          constraints: c.makeConstraintsToEdge(parent)
+          constraints: block.makeConstraintsToEdge(parent)
         )
 
       case .relative(let c as _LayoutBlockType),
@@ -68,7 +78,8 @@ public struct OverlayBlock:
            .hStack(let c as _LayoutBlockType),
            .zStack(let c as _LayoutBlockType),
            .overlay(let c as _LayoutBlockType),
-           .background(let c as _LayoutBlockType):
+           .background(let c as _LayoutBlockType),
+           .vGrid(let c as _LayoutBlockType):
 
         let overlayLayoutGuide = context.makeLayoutGuide(identifier: "Overlay")
 

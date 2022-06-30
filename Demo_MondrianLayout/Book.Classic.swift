@@ -8,6 +8,33 @@ var _book_classic: BookView {
     BookPreview {
       ExampleView(width: nil, height: nil) { view in
 
+        let box1 = UIView.mock(preferredSize: .init(width: 30, height: 30))
+        let box2 = UIView.mock(preferredSize: .init(width: 30, height: 30))
+
+        view.addSubview(box1)
+        view.addSubview(box2)
+
+        Mondrian.layout {
+
+          box1.mondrian.layout
+            .top(.toSuperview, .min(0))
+            .left(.toSuperview)
+            .right(.to(box2).left)
+            .bottom(.to(box2).bottom)
+
+          box2.mondrian.layout
+            .top(.toSuperview.top)
+            .height(.to(box1).height, multiplier: 2)
+            .right(.toSuperview)
+            .bottom(.toSuperview)
+
+        }
+      }
+    }
+
+    BookPreview {
+      ExampleView(width: nil, height: nil) { view in
+
         let label1 = UILabel.mockSingleline(text: "Hello")
         let label2 = UILabel.mockSingleline(text: "Hello")
 
@@ -95,7 +122,7 @@ var _book_classic: BookView {
             .edges(.toSuperview)
 
           containeeEdgesDemo.mondrian.layout
-            .edges(.toSuperview, .constant(8))
+            .edges(.toSuperview, .exact(8))
         }
       }
     }
@@ -144,7 +171,7 @@ var _book_classic: BookView {
           let box1 = UIView.mock(backgroundColor: .neon(.red), preferredSize: .largeSquare)
           let box2 = UIView.mock(backgroundColor: .neon(.yellow), preferredSize: .largeSquare)
 
-          view.mondrian.buildSubviews {
+          Mondrian.buildSubviews(on: view) {
             HStackBlock(spacing: 10) {
               box1
               box2
@@ -175,13 +202,13 @@ var _book_classic: BookView {
             box1.mondrian.layout
               .top(.toSuperview, 10)
               .left(.toSuperview, 10)
-              .bottom(.toSuperview, -10)
+              .bottom(.toSuperview, 10)
 
             box2.mondrian.layout
               .top(.toSuperview, 10)
               .left(.to(box1).right, 10)
-              .right(.toSuperview, -10)
-              .bottom(.toSuperview, -10)
+              .right(.toSuperview, 10)
+              .bottom(.toSuperview, 10)
 
           }
 

@@ -2,13 +2,16 @@ import UIKit
 
 /// [MondrianLayout]
 /// A descriptor that lays out the contents vertically in parent layout element.
+/// spacing: `0`
+/// alignment: `.center`
 public struct VStackBlock:
-  _LayoutBlockType
+  _LayoutBlockType,
+  _DimensionConstraintType
 {
 
   /// Alignment option for ``VStackBlock``
   public enum XAxisAlignment {
-    
+
     /// In ``VStackBlock``
     case leading
 
@@ -24,11 +27,13 @@ public struct VStackBlock:
 
   // MARK: - Properties
 
-  public let name = "VStack"
-
   public var _layoutBlockNode: _LayoutBlockNode {
     return .vStack(self)
   }
+
+  public let name = "VStack"
+
+  public var dimensionConstraints: DimensionDescriptor = .init()
 
   public var spacing: CGFloat
   public var alignment: XAxisAlignment
@@ -49,6 +54,8 @@ public struct VStackBlock:
   // MARK: - Functions
 
   public func setupConstraints(parent: _LayoutElement, in context: LayoutBuilderContext) {
+
+    context.add(constraints: dimensionConstraints.makeConstraints(for: parent))
 
     let startAnchorKeyPath = \_LayoutElement.topAnchor
     let endAnchorKeyPath = \_LayoutElement.bottomAnchor
@@ -142,13 +149,20 @@ public struct VStackBlock:
       switch element {
       case .content(let content):
         switch content.node {
-        case .view(let viewConstraint):
+        case .layoutGuide(let block):
 
-          let view = viewConstraint.view
-          context.register(viewConstraint: viewConstraint)
-          boxes.append(.init(view: view))
+          context.register(layoutGuideBlock: block)
+          boxes.append(.init(layoutGuide: block.layoutGuide))
 
-          align(layoutElement: .init(view: view), alignment: content.alignSelf ?? alignment)
+          align(layoutElement: .init(layoutGuide: block.layoutGuide), alignment: content.alignSelf ?? alignment)
+          appendSpacingIfNeeded()
+
+        case .view(let block):
+
+          context.register(viewBlock: block)
+          boxes.append(.init(view: block.view))
+
+          align(layoutElement: .init(view: block.view), alignment: content.alignSelf ?? alignment)
           appendSpacingIfNeeded()
 
         case .background(let c as _LayoutBlockType),
@@ -156,7 +170,8 @@ public struct VStackBlock:
           .relative(let c as _LayoutBlockType),
           .vStack(let c as _LayoutBlockType),
           .hStack(let c as _LayoutBlockType),
-          .zStack(let c as _LayoutBlockType):
+          .zStack(let c as _LayoutBlockType),
+          .vGrid(let c as _LayoutBlockType):
 
           let newLayoutGuide = context.makeLayoutGuide(identifier: "HStackBlock.\(c.name)")
           c.setupConstraints(parent: .init(layoutGuide: newLayoutGuide), in: context)

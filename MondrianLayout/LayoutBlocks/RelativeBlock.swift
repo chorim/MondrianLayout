@@ -2,7 +2,10 @@ import UIKit
 
 /// [MondrianLayout]
 /// A descriptor that lays out a single content and positions within the parent according to vertical and horizontal positional length.
-public struct RelativeBlock: _LayoutBlockType, _LayoutBlockNodeConvertible {
+public struct RelativeBlock:
+  _LayoutBlockType,
+  _DimensionConstraintType
+{
 
   public struct ConstrainedValue: Equatable, ExpressibleByFloatLiteral, ExpressibleByIntegerLiteral {
     public var min: CGFloat?
@@ -66,11 +69,14 @@ public struct RelativeBlock: _LayoutBlockType, _LayoutBlockNodeConvertible {
     }
   }
 
-  public var name: String = "Relative"
 
   public var _layoutBlockNode: _LayoutBlockNode {
     return .relative(self)
   }
+
+  public var name: String = "Relative"
+
+  public var dimensionConstraints: DimensionDescriptor = .init()
 
   public let content: _LayoutBlockNode
 
@@ -95,6 +101,8 @@ public struct RelativeBlock: _LayoutBlockType, _LayoutBlockNodeConvertible {
   }
 
   public func setupConstraints(parent: _LayoutElement, in context: LayoutBuilderContext) {
+
+    context.add(constraints: dimensionConstraints.makeConstraints(for: parent))
 
     func perform(current: _LayoutElement) {
 
@@ -221,18 +229,23 @@ public struct RelativeBlock: _LayoutBlockType, _LayoutBlockNodeConvertible {
     }
 
     switch content {
-    case .view(let viewConstarint):
+    case .layoutGuide(let block):
 
-      context.register(viewConstraint: viewConstarint)
+      context.register(layoutGuideBlock: block)
+      perform(current: .init(layoutGuide: block.layoutGuide))
 
-      perform(current: .init(view: viewConstarint.view))
+    case .view(let block):
+
+      context.register(viewBlock: block)
+      perform(current: .init(view: block.view))
 
     case .vStack(let c as _LayoutBlockType),
       .hStack(let c as _LayoutBlockType),
       .zStack(let c as _LayoutBlockType),
       .background(let c as _LayoutBlockType),
       .relative(let c as _LayoutBlockType),
-      .overlay(let c as _LayoutBlockType):
+      .overlay(let c as _LayoutBlockType),
+      .vGrid(let c as _LayoutBlockType):
 
       let newLayoutGuide = context.makeLayoutGuide(identifier: "RelativeBlock.\(c.name)")
       c.setupConstraints(parent: .init(layoutGuide: newLayoutGuide), in: context)
